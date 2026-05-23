@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if request.path == '/' or request.path == '/index' %}
+  <div class="container">
+    <div class="row min-vh-75 align-items-center justify-content-center py-5">
+      <div class="col-md-10 text-center">
+        <div class="badge-container mb-3">
+          <span class="badge" style="font-size: 1rem; padding: 0.5em 1.2em !important;">GAISC 2026</span>
+        </div>
+        <h1 class="display-3 mb-3" style="font-family: 'Orbitron', sans-serif; font-weight: 700; color: #f8fafc;">
+          Gangwon AI Cyber<br><span style="color: #00f5ff; text-shadow: 0 0 15px rgba(0, 245, 255, 0.4);">Security Challenge</span>
+        </h1>
+        <p class="lead mb-5 text-muted" style="font-size: 1.25rem;">
+          강원도의 미래 사이버 보안 인재 양성을 위한 최고의 관문.<br>
+          지금 미래의 AI 보안 인재 대열에 합류하세요.
+        </p>
+
+        <!-- Countdown Timer: Target August 29, 2026 -->
+        <div class="countdown-container mx-auto text-start">
+          <div class="countdown-header text-center">본 대회 D-DAY 카운트다운</div>
+          <div id="countdown-timer">
+            <div class="time-block">
+              <span class="time-num" id="days">00</span>
+              <span class="time-label">DAYS</span>
+            </div>
+            <div class="time-colon">:</div>
+            <div class="time-block">
+              <span class="time-num" id="hours">00</span>
+              <span class="time-label">HOURS</span>
+            </div>
+            <div class="time-colon">:</div>
+            <div class="time-block">
+              <span class="time-num" id="minutes">00</span>
+              <span class="time-label">MINS</span>
+            </div>
+            <div class="time-colon">:</div>
+            <div class="time-block">
+              <span class="time-num" id="seconds">00</span>
+              <span class="time-label">SECS</span>
+            </div>
+          </div>
+          <div class="countdown-target text-center">본 대회 일시: 2026년 8월 29일(토) 10:00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div class="container">
+    {{ content | safe }}
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ Assets.js("assets/js/page.js") }}
+{% endblock %}
+
