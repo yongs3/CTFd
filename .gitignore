@@ -80,3 +80,44 @@ node_modules/
 
 # Flask Profiler files
 flask_profiler.sql
+
+# Environment files / secrets
+.env
+.env.*
+!.env.example
+
+# Python caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor swap/backup files
+*.swp
+*.swo
+*.bak
+*~
+
+# OS-specific
+Thumbs.db
+desktop.ini
+
+# Gemini / Antigravity tool outputs
+*_replace.jsonl
+
+# NPM lockfile (this repo uses yarn)
+CTFd/themes/*/package-lock.json
+
+# External plugins (cloned with their own .git)
+CTFd/plugins/ctfd-whale/
+CTFd/plugins/ctfd-portable-challenges-plugin/
+
+# External / unused themes (kangwon-cyber is the only one we track)
+CTFd/themes/cyber-frontier/
+CTFd/themes/ftheme/
+CTFd/themes/m0xblood/
+CTFd/themes/pixo/
+CTFd/themes/tsgctf/
+CTFd/themes/uiuctf-2023/
+CTFd/themes/w3theme/
+CTFd/themes/watchdogs/
+CTFd/themes/wmctf2025/
