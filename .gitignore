@@ -107,6 +107,9 @@ desktop.ini
 # Claude Code
 CLAUDE.md
 
+# Private deployment guide (contains credentials)
+DEPLOYMENT.md
+
 # NPM lockfile (this repo uses yarn)
 CTFd/themes/*/package-lock.json
 
