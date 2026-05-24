@@ -104,16 +104,25 @@ services:
       internal:
       containers:
 
+  frps-init:
+    image: alpine:3.23
+    volumes:
+      - ./conf/frp:/etc/frp:ro
+      - frps-config:/out
+    environment:
+      - FRP_TOKEN=${FRP_TOKEN:-changeme}
+      - FRP_SUBDOMAIN_HOST=${FRP_SUBDOMAIN_HOST:-127.0.0.1.nip.io}
+    command: sh -c 'sed -e "s/__FRP_TOKEN__/$$FRP_TOKEN/g" -e "s/__FRP_SUBDOMAIN_HOST__/$$FRP_SUBDOMAIN_HOST/g" /etc/frp/frps.ini > /out/frps.ini && cp /etc/frp/404.html /out/404.html'
+
   frps:
     image: frankli0324/frp:frps
     restart: always
-    command: [
-      "--bind_addr=0.0.0.0",
-      "--bind_port=7000",
-      "--token=${FRP_TOKEN:-changeme}",
-      "--subdomain_host=${FRP_SUBDOMAIN_HOST:-127.0.0.1.nip.io}",
-      "--vhost_http_port=8080",
-    ]
+    volumes:
+      - frps-config:/etc/frp:ro
+    command: ["-c", "/etc/frp/frps.ini"]
+    depends_on:
+      frps-init:
+        condition: service_completed_successfully
     ports:
       - 8080:8080
       - 10000-10100:10000-10100
@@ -131,3 +140,6 @@ networks:
     internal: true
     driver: overlay
     attachable: true
+
+volumes:
+  frps-config:
