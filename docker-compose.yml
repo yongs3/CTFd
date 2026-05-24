@@ -50,8 +50,12 @@ services:
       - ./conf/nginx/http.conf:/etc/nginx/nginx.conf
     ports:
       - 80:80
+      - 8888:8888
     depends_on:
       - ctfd
+    networks:
+      default:
+      containers:
 
   db:
     image: mariadb:10.11

@@ -104,6 +104,9 @@ desktop.ini
 # Gemini / Antigravity tool outputs
 *_replace.jsonl
 
+# Claude Code
+CLAUDE.md
+
 # NPM lockfile (this repo uses yarn)
 CTFd/themes/*/package-lock.json
 

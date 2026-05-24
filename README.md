@@ -4,60 +4,62 @@
 
 ## 아키텍처
 
-클라우드(CTFd 웹) + 로컬 서버(챌린지 컨테이너) 하이브리드 구성.
+로컬 서버(14900KF)에서 전체 스택 실행, 클라우드는 공인 IP 제공용 리버스 프록시만 담당.
 
 ```
    학생 (브라우저)
        |
-       | HTTP :80
+       | HTTP
        v
-+--------------------------------------+
-|  클라우드 (Swarm Manager)             |
-|                                      |
-|  nginx :80 --> CTFd :8000            |
-|                  |                   |
-|            Docker Socket             |
-|                  v                   |
-|             Swarm API                |
-|                  |                   |
-|  MariaDB   Redis   frps   frpc      |
-|                    :8080   :7400     |
-|                    :10000-10100      |
-+---------|------------|---------------+
-          |  Tailscale (암호화 터널)
-          |  overlay network (ctfd_containers)
-          |            |
-+---------|------------|---------------+
-|                      v               |
-|       챌린지 컨테이너 (학생별 독립)    |
-|       web-chall-1, pwn-chall-2 ...   |
-|                                      |
-|  로컬 서버 (Swarm Worker: linux-1)    |
-+--------------------------------------+
++----------------------------+
+| 클라우드 (리버스 프록시)     |
+|                            |
+| nginx :80   --> :80        |
+| nginx :8080 --> :8080      |
+| iptables :10000-10100      |
+|        --> :10000-10100    |
++------------|---------------+
+             | Tailscale (암호화 터널)
+             v
++----------------------------+
+| 로컬 서버 (14900KF/64GB)   |
+|                            |
+| nginx :80 --> CTFd :8000   |
+| nginx :8888 (LLM API 프록시)|
+|                            |
+| MariaDB  Redis             |
+| frps :8080  frpc :7400     |
+|   :10000-10100             |
+|                            |
+| Docker Swarm (단일 노드)    |
+| 챌린지 컨테이너 (학생별)     |
++----------------------------+
 ```
 
 ### 흐름
 
 1. 학생이 CTFd에서 챌린지 Launch 클릭
-2. whale 플러그인이 Swarm API로 컨테이너 생성 요청
-3. Swarm이 `linux-1` 라벨 워커(로컬 서버)에 컨테이너 배치
+2. whale 플러그인이 Docker Swarm API로 컨테이너 생성
+3. 컨테이너가 로컬 서버의 `linux-1` 노드에 배치
 4. 컨테이너에 학생별 고유 FLAG 환경변수 주입
 5. frpc가 해당 컨테이너로의 터널 자동 등록
 6. 학생에게 접속 정보 표시 (TCP: `:100xx` / HTTP: 서브도메인)
-7. 시간 만료 시 컨테이너 자동 삭제
+7. 학생은 클라우드 공인 IP로 접속 → Tailscale 터널 → 로컬 서버
+8. 시간 만료 시 컨테이너 자동 삭제
 
 ### 구성 요소
 
 | 구성 요소 | 위치 | 역할 |
 |---|---|---|
-| CTFd | 클라우드 | 웹 플랫폼, 문제 관리, 스코어보드 |
-| MariaDB | 클라우드 | CTFd 데이터베이스 |
-| Redis | 클라우드 | 캐시 (whale 필수) |
-| nginx | 클라우드 | 리버스 프록시 (:80 -> :8000) |
-| frps | 클라우드 | 챌린지 트래픽 게이트웨이 |
-| frpc | 클라우드 | 챌린지 컨테이너 ↔ frps 터널 중계 |
-| Docker Swarm | 양쪽 | 클라우드=매니저, 로컬=워커 |
+| nginx (프록시) | 클라우드 | 공인 IP → 로컬 서버 트래픽 포워딩 |
 | Tailscale | 양쪽 | 클라우드 ↔ 로컬 암호화 VPN |
+| CTFd | 로컬 서버 | 웹 플랫폼, 문제 관리, 스코어보드 |
+| MariaDB | 로컬 서버 | CTFd 데이터베이스 |
+| Redis | 로컬 서버 | 캐시 (whale 필수) |
+| nginx (로컬) | 로컬 서버 | CTFd 리버스 프록시 + LLM API 프록시 |
+| frps | 로컬 서버 | 챌린지 트래픽 게이트웨이 |
+| frpc | 로컬 서버 | 챌린지 컨테이너 ↔ frps 터널 중계 |
+| Docker Swarm | 로컬 서버 | 단일 노드 (매니저+워커) |
 | 챌린지 컨테이너 | 로컬 서버 | 학생별 독립 환경 (동적 생성/삭제) |
 
 ## upstream 대비 변경사항
@@ -88,6 +90,7 @@ CTFd 설정에서 테마를 `kangwon-cyber`로 선택하면 적용됨.
 | Docker socket | 없음 | `/var/run/docker.sock` 마운트 |
 | frpc / frps | 없음 | 추가 (whale 연동) |
 | overlay 네트워크 | 없음 | `frp`, `containers` 추가 |
+| nginx LLM 프록시 | 없음 | `:8888` → litellm.yongs.win |
 | 환경변수 | 없음 | `FRP_TOKEN`, `FRP_SUBDOMAIN_HOST` |
 
 ## 배포 방법
@@ -115,38 +118,37 @@ cp .env.example .env
 # .env 편집: FRP_TOKEN, FRP_SUBDOMAIN_HOST 설정
 ```
 
-### 4. Docker Swarm 초기화
+### 4. Docker Swarm 초기화 (단일 노드)
 
 ```bash
 docker swarm init
 docker node update --label-add name=linux-1 $(docker node ls -q)
 ```
 
-원격 워커 노드 추가 시:
-```bash
-# 매니저에서 토큰 확인
-docker swarm join-token worker
-
-# 워커에서 조인 (Tailscale IP 사용)
-docker swarm join --token <TOKEN> <MANAGER_TAILSCALE_IP>:2377
-docker node update --label-add name=linux-1 <NODE_ID>
-```
-
 ### 5. 실행
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 
-# 첫 실행 후 whale 네트워크 설정
+# 첫 실행 후 whale 설정
 docker compose exec ctfd python manage.py set_config whale:auto_connect_network ctfd_containers
 ```
 
 `http://localhost`에서 CTFd 초기 설정 진행.
 
-### 6. 챌린지 추가
+### 6. 클라우드 리버스 프록시 설정
+
+클라우드 서버에 nginx + iptables로 트래픽 포워딩:
+
+```bash
+# nginx: HTTP 프록시 (:80, :8080 → 로컬 Tailscale IP)
+# iptables: TCP 포워딩 (:10000-10100 → 로컬 Tailscale IP)
+```
+
+### 7. 챌린지 추가
 
 1. 챌린지 Docker 이미지 준비 (환경변수 `$FLAG`로 플래그 주입)
-2. 워커 노드에 이미지 빌드 또는 pull
+2. 로컬 서버에서 이미지 빌드
 3. CTFd Admin > Challenges > New > `dynamic_docker` 타입 선택
 4. 이미지명, 포트, 접속 방식(http/direct) 설정
 
