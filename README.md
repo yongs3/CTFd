@@ -129,12 +129,31 @@ docker node update --label-add name=linux-1 $(docker node ls -q)
 
 ```bash
 docker compose up -d --build
-
-# 첫 실행 후 whale 설정
-docker compose exec ctfd python manage.py set_config whale:auto_connect_network ctfd_containers
 ```
 
 `http://localhost`에서 CTFd 초기 설정 진행.
+
+### 5-1. whale 플러그인 설정 (첫 실행 후)
+
+> **주의**: 키 이름에 `docker_` 접두사가 필요합니다. `whale:auto_connect_network`가 아니라
+> `whale:docker_auto_connect_network`입니다. 잘못된 키를 쓰면 챌린지 컨테이너가 frpc와
+> 다른 네트워크에 배치되어 접속이 안 됩니다.
+
+```bash
+# 필수
+docker compose exec ctfd python manage.py set_config whale:docker_auto_connect_network ctfd_containers
+
+# frp 연동
+docker compose exec ctfd python manage.py set_config whale:frp_api_url http://frpc:7400
+docker compose exec ctfd python manage.py set_config whale:frp_http_domain_suffix <공인IP>.nip.io
+docker compose exec ctfd python manage.py set_config whale:frp_http_port 8080
+docker compose exec ctfd python manage.py set_config whale:frp_direct_ip_address <공인IP>
+docker compose exec ctfd python manage.py set_config whale:frp_direct_port_minimum 10000
+docker compose exec ctfd python manage.py set_config whale:frp_direct_port_maximum 10100
+
+# 플래그 템플릿 (원하는 형식으로)
+docker compose exec ctfd python manage.py set_config 'whale:template_chall_flag' '{{ "GA{" + uuid.uuid4()|string + "}" }}'
+```
 
 ### 6. 클라우드 리버스 프록시 설정
 
