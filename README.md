@@ -83,6 +83,34 @@ OAUTH_CLIENT_ID = None
 OAUTH_CLIENT_SECRET = None
 ```
 
+## Whale Plugin Setup (Dynamic Challenge Containers)
+
+This fork uses [ctfd-whale (frankli0324)](https://github.com/frankli0324/ctfd-whale) for per-user dynamic challenge containers.
+
+### Installation
+
+```bash
+# Clone whale plugin into plugins directory
+git clone --depth 1 https://github.com/frankli0324/ctfd-whale.git CTFd/plugins/ctfd-whale
+
+# Fix docker SDK version (upstream pins 4.1.0 which is incompatible with urllib3 2.x)
+sed -i 's/docker==4.1.0/docker>=7.0.0/' CTFd/plugins/ctfd-whale/requirements.txt
+```
+
+### Configuration
+
+```bash
+# Copy and edit .env
+cp .env.example .env
+# Set FRP_TOKEN and FRP_SUBDOMAIN_HOST in .env
+
+# Start services
+docker compose up -d
+
+# Set whale auto-connect network (after first startup)
+docker compose exec ctfd python manage.py set_config whale:auto_connect_network ctfd_containers
+```
+
 ## Credits
 
 - Logo by [Laura Barbera](http://www.laurabb.com/)
