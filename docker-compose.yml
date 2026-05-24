@@ -47,7 +47,13 @@ services:
     image: nginx:stable
     restart: always
     volumes:
-      - ./conf/nginx/http.conf:/etc/nginx/nginx.conf
+      - ./conf/nginx/http.conf:/etc/nginx/nginx.conf.template:ro
+    environment:
+      - LLM_PROXY_UPSTREAM=${LLM_PROXY_UPSTREAM:-localhost}
+    command:
+      - /bin/sh
+      - -c
+      - sed "s/__LLM_UPSTREAM__/$$LLM_PROXY_UPSTREAM/g" /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g "daemon off;"
     ports:
       - 80:80
       - 8888:8888
