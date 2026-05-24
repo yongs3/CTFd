@@ -1,6 +1,9 @@
 services:
   ctfd:
-    build: .
+    build:
+      context: .
+      network: host
+    user: root
     restart: always
     ports:
       - "8000:8000"
@@ -17,6 +20,7 @@ services:
       - .data/CTFd/logs:/var/log/CTFd
       - .data/CTFd/uploads:/var/uploads
       - .:/opt/CTFd:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       permissions:
         condition: service_completed_successfully
@@ -24,9 +28,11 @@ services:
         condition: service_started
       cache:
         condition: service_started
+      frpc:
+        condition: service_started
     networks:
-        default:
-        internal:
+      default:
+      internal:
 
   # TODO: CTFd 4.0 Migrate to named volumes. Users will likely need to manually migrate existing files
   permissions:
@@ -59,7 +65,7 @@ services:
     volumes:
       - .data/mysql:/var/lib/mysql
     networks:
-        internal:
+      internal:
     # This command is required to set important mariadb defaults
     command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
 
@@ -67,11 +73,51 @@ services:
     image: redis:4
     restart: always
     volumes:
-    - .data/redis:/data
+      - .data/redis:/data
     networks:
-        internal:
+      internal:
+
+  frpc:
+    image: frankli0324/frp:frpc
+    restart: always
+    command: [
+      "--server_addr=frps",
+      "--server_port=7000",
+      "--token=${FRP_TOKEN:-changeme}",
+      "--admin_addr=0.0.0.0",
+      "--admin_port=7400",
+    ]
+    depends_on:
+      - frps
+    networks:
+      frp:
+      internal:
+      containers:
+
+  frps:
+    image: frankli0324/frp:frps
+    restart: always
+    command: [
+      "--bind_addr=0.0.0.0",
+      "--bind_port=7000",
+      "--token=${FRP_TOKEN:-changeme}",
+      "--subdomain_host=${FRP_SUBDOMAIN_HOST:-127.0.0.1.nip.io}",
+      "--vhost_http_port=8080",
+    ]
+    ports:
+      - 8080:8080
+      - 10000-10100:10000-10100
+    networks:
+      frp:
+      default:
 
 networks:
-    default:
-    internal:
-        internal: true
+  default:
+  internal:
+    internal: true
+  frp:
+    internal: true
+  containers:
+    internal: true
+    driver: overlay
+    attachable: true
