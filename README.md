@@ -1,118 +1,71 @@
-# ![](https://github.com/CTFd/CTFd/blob/master/CTFd/themes/core/static/img/logo.png?raw=true)
+# Kangwon Cyber CTFd
 
-![CTFd MySQL CI](https://github.com/CTFd/CTFd/workflows/CTFd%20MySQL%20CI/badge.svg?branch=master)
-![Linting](https://github.com/CTFd/CTFd/workflows/Linting/badge.svg?branch=master)
-[![MajorLeagueCyber Discourse](https://img.shields.io/discourse/status?server=https%3A%2F%2Fcommunity.majorleaguecyber.org%2F)](https://community.majorleaguecyber.org/)
-[![Documentation Status](https://api.netlify.com/api/v1/badges/6d10883a-77bb-45c1-a003-22ce1284190e/deploy-status)](https://docs.ctfd.io)
+[CTFd 3.8.5](https://github.com/CTFd/CTFd) 기반 강원 사이버 CTF 플랫폼.
 
-## What is CTFd?
+## upstream 대비 변경사항
 
-CTFd is a Capture The Flag framework focusing on ease of use and customizability. It comes with everything you need to run a CTF and it's easy to customize with plugins and themes.
+### 커스텀 테마
 
-![CTFd is a CTF in a can.](https://github.com/CTFd/CTFd/blob/master/CTFd/themes/core/static/img/scoreboard.png?raw=true)
+`CTFd/themes/kangwon-cyber/` 디렉토리에 전용 테마 추가. upstream `core` 테마는 수정하지 않음.
 
-## Features
+CTFd 설정에서 테마를 `kangwon-cyber`로 선택하면 적용됨.
 
-- Create your own challenges, categories, hints, and flags from the Admin Interface
-  - Dynamic Scoring Challenges
-  - Unlockable challenge support
-  - Challenge plugin architecture to create your own custom challenges
-  - Static & Regex based flags
-    - Custom flag plugins
-  - Unlockable hints
-  - File uploads to the server or an Amazon S3-compatible backend
-  - Limit challenge attempts & hide challenges
-  - Automatic bruteforce protection
-- Individual and Team based competitions
-  - Have users play on their own or form teams to play together
-- Scoreboard with automatic tie resolution
-  - Hide Scores from the public
-  - Freeze Scores at a specific time
-- Scoregraphs comparing the top 10 teams and team progress graphs
-- Markdown content management system
-- SMTP + Mailgun email support
-  - Email confirmation support
-  - Forgot password support
-- Automatic competition starting and ending
-- Team management, hiding, and banning
-- Customize everything using the [plugin](https://docs.ctfd.io/docs/plugins/overview) and [theme](https://docs.ctfd.io/docs/themes/overview) interfaces
-- Importing and Exporting of CTF data for archival
-- And a lot more...
+### 한국어 번역 보완
 
-## Install
+- 스코어보드 "Place" 번역 수정: 장소 → 순위
+- 팀 생성 안내 문구 한국어 번역 추가
 
-1. Install dependencies: `pip install -r requirements.txt`
-   1. You can also use the `prepare.sh` script to install system dependencies using apt.
-2. Modify [CTFd/config.ini](https://github.com/CTFd/CTFd/blob/master/CTFd/config.ini) to your liking.
-3. Use `python serve.py` or `flask run` in a terminal to drop into debug mode.
+### ctfd-whale 플러그인 연동
 
-You can use the auto-generated Docker images with the following command:
+[ctfd-whale (frankli0324)](https://github.com/frankli0324/ctfd-whale)을 통해 학생별 독립 챌린지 컨테이너를 동적 생성.
 
-`docker run -p 8000:8000 -it ctfd/ctfd`
+`docker-compose.yml`에 frpc/frps 서비스, overlay 네트워크, Docker 소켓 마운트가 포함되어 있음.
 
-Or you can use Docker Compose with the following command from the source repository:
+## 배포 방법
 
-`docker compose up`
-
-Check out the [CTFd docs](https://docs.ctfd.io/) for [deployment options](https://docs.ctfd.io/docs/deployment/installation) and the [Getting Started](https://docs.ctfd.io/tutorials/getting-started/) guide
-
-## Live Demo
-
-https://demo.ctfd.io/
-
-## Support
-
-To get basic support, you can join the [MajorLeagueCyber Community](https://community.majorleaguecyber.org/): [![MajorLeagueCyber Discourse](https://img.shields.io/discourse/status?server=https%3A%2F%2Fcommunity.majorleaguecyber.org%2F)](https://community.majorleaguecyber.org/)
-
-If you prefer commercial support or have a special project, feel free to [contact us](https://ctfd.io/contact/).
-
-## Managed Hosting
-
-Looking to use CTFd but don't want to deal with managing infrastructure? Check out [the CTFd website](https://ctfd.io/) for managed CTFd deployments.
-
-## MajorLeagueCyber
-
-CTFd is heavily integrated with [MajorLeagueCyber](https://majorleaguecyber.org/). MajorLeagueCyber (MLC) is a CTF stats tracker that provides event scheduling, team tracking, and single sign on for events.
-
-By registering your CTF event with MajorLeagueCyber users can automatically login, track their individual and team scores, submit writeups, and get notifications of important events.
-
-To integrate with MajorLeagueCyber, simply register an account, create an event, and install the client ID and client secret in the relevant portion in `CTFd/config.py` or in the admin panel:
-
-```python
-OAUTH_CLIENT_ID = None
-OAUTH_CLIENT_SECRET = None
-```
-
-## Whale Plugin Setup (Dynamic Challenge Containers)
-
-This fork uses [ctfd-whale (frankli0324)](https://github.com/frankli0324/ctfd-whale) for per-user dynamic challenge containers.
-
-### Installation
+### 1. 클론
 
 ```bash
-# Clone whale plugin into plugins directory
+git clone https://github.com/yongs3/CTFd.git
+cd CTFd
+```
+
+### 2. whale 플러그인 설치
+
+```bash
 git clone --depth 1 https://github.com/frankli0324/ctfd-whale.git CTFd/plugins/ctfd-whale
 
-# Fix docker SDK version (upstream pins 4.1.0 which is incompatible with urllib3 2.x)
+# docker SDK 버전 수정 (upstream이 4.1.0을 핀하고 있어 urllib3 2.x와 호환 안 됨)
 sed -i 's/docker==4.1.0/docker>=7.0.0/' CTFd/plugins/ctfd-whale/requirements.txt
 ```
 
-### Configuration
+### 3. 환경 설정
 
 ```bash
-# Copy and edit .env
 cp .env.example .env
-# Set FRP_TOKEN and FRP_SUBDOMAIN_HOST in .env
+# .env 편집: FRP_TOKEN, FRP_SUBDOMAIN_HOST 설정
+```
 
-# Start services
+### 4. Docker Swarm 초기화
+
+```bash
+docker swarm init
+docker node update --label-add name=linux-1 $(docker node ls -q)
+```
+
+### 5. 실행
+
+```bash
 docker compose up -d
 
-# Set whale auto-connect network (after first startup)
+# 첫 실행 후 whale 네트워크 설정
 docker compose exec ctfd python manage.py set_config whale:auto_connect_network ctfd_containers
 ```
 
-## Credits
+`http://localhost:8000`에서 CTFd 초기 설정 진행.
 
-- Logo by [Laura Barbera](http://www.laurabb.com/)
-- Theme by [Christopher Thompson](https://github.com/breadchris)
-- Notification Sound by [Terrence Martin](https://soundcloud.com/tj-martin-composer)
+## 참고
+
+- upstream: https://github.com/CTFd/CTFd
+- whale 플러그인: https://github.com/frankli0324/ctfd-whale
+- whale 설치 가이드: https://github.com/frankli0324/ctfd-whale/blob/master/docs/install.md
