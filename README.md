@@ -213,6 +213,41 @@ sudo iptables-save | sudo tee /etc/iptables.rules
 | 챌린지에서 외부 API 접속 불가 | `containers` 네트워크가 `internal: true` | nginx LLM 프록시 사용, `docker_auto_connect_containers`에 `ctfd-nginx-1` 추가 |
 | 플래그 끝에 `}}` 이중 괄호 | entrypoint에서 `${FLAG:-default{}}` bash 파싱 오류 | `echo "$FLAG" > /flag` 사용 (기본값에 `{}` 포함 금지) |
 | BuildKit에서 pip 설치 실패 | Docker 빌드 DNS 해석 불가 | `build.network: host` 설정 확인 |
+| 테마 수정 후 카운트다운/배경 등 JS가 안 돌고 카운트다운이 `00:00:00:00`에 멈춤 | `_get_asset_json` Redis memoize에 옛 매니페스트가 남아 있어 브라우저가 이미 삭제된 옛 해시 JS를 요청 → 404 | 아래 "테마 빌드 → 매니페스트 캐시 무효화" 절차 수행 |
+
+## 테마 빌드
+
+`kangwon-cyber` 테마의 JS/SCSS 소스(`CTFd/themes/kangwon-cyber/assets/`)나 템플릿을 수정한 뒤 변경을 반영하는 절차.
+
+### 1. 번들 재빌드
+
+```bash
+cd CTFd/themes/kangwon-cyber
+npm run build
+```
+
+Vite가 `static/`에 새 해시로 번들을 출력하고, 기존 해시 파일은 덮어쓰여 사라집니다. `static/manifest.json`이 소스 경로(`assets/js/page.js`) → 새 해시 파일(`assets/page.<hash>.js`)을 매핑합니다.
+
+템플릿(`templates/*.html`)만 수정한 경우는 빌드 불필요 — Jinja2는 매 요청마다 디스크에서 읽습니다.
+
+### 2. 매니페스트 캐시 무효화 (JS/SCSS 수정 시 필수)
+
+CTFd는 `_get_asset_json`을 `@cache.memoize()`로 Redis에 캐싱합니다. 컨테이너 재시작만으론 Redis 캐시가 그대로 남아 옛 매니페스트가 반환되고, 브라우저는 이미 삭제된 옛 해시 JS를 요청해 404를 받습니다 → 테마 JS 전체 미실행.
+
+```bash
+docker compose exec ctfd python -c "
+from CTFd import create_app
+app = create_app()
+with app.app_context():
+    from CTFd.utils import _get_asset_json
+    from CTFd.cache import cache
+    cache.delete_memoized(_get_asset_json)
+"
+```
+
+### 3. 브라우저 강력 새로고침
+
+`Ctrl+Shift+R` (또는 `Cmd+Shift+R`)로 브라우저 캐시 우회.
 
 ## 참고
 
