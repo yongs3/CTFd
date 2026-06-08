@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Countdown Timer targeting 2026.08.29 10:00:00 KST
   const daysEl = document.getElementById('days');
   if (daysEl) {
-    const targetDate = new Date('2026-08-29T10:00:00').getTime();
+    const targetDate = new Date('2026-08-29T11:00:00').getTime();
 
     const updateCountdown = () => {
       const now = new Date().getTime();
