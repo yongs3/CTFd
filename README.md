@@ -92,6 +92,8 @@ CTFd 설정에서 테마를 `kangwon-cyber`로 선택하면 적용됨.
 | nginx LLM 프록시 | 없음 | `:8888` (챌린지 컨테이너 → 외부 LLM API) |
 | nginx containers 네트워크 | 없음 | 챌린지 전용 네트워크에서 nginx 접근 가능 |
 | 환경변수 | 없음 | `FRP_TOKEN`, `FRP_SUBDOMAIN_HOST` |
+| `WORKERS` | `1` | `4` (gunicorn 멀티워커) |
+| secret 볼륨 | 없음 | `.data/CTFd/secret` 마운트 — 멀티워커용 `SECRET_KEY`를 entrypoint가 자동 생성·영속(무설정) |
 
 ## 배포 방법
 

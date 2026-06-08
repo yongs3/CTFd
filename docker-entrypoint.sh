@@ -9,6 +9,21 @@ WORKER_TEMP_DIR=${WORKER_TEMP_DIR:-/dev/shm}
 SECRET_KEY=${SECRET_KEY:-}
 SKIP_DB_PING=${SKIP_DB_PING:-false}
 
+# Auto-provision a stable SECRET_KEY so multi-worker mode works without manual setup.
+# All gunicorn workers must share one fixed key, otherwise sessions break across workers
+# (gunicorn runs without --preload, so each worker would otherwise generate its own key).
+# The repo is mounted read-only, so upstream's .ctfd_secret_key auto-write cannot persist;
+# instead we keep the key on a writable, restart-persistent volume and pass it via the env.
+if [ -z "$SECRET_KEY" ] && [ ! -f .ctfd_secret_key ]; then
+    SECRET_KEY_FILE="/var/lib/ctfd-secret/.ctfd_secret_key"
+    mkdir -p "$(dirname "$SECRET_KEY_FILE")"
+    if [ ! -s "$SECRET_KEY_FILE" ]; then
+        SECRET_KEY_FILE="$SECRET_KEY_FILE" python -c "import os; open(os.environ['SECRET_KEY_FILE'], 'w').write(os.urandom(64).hex())"
+    fi
+    SECRET_KEY="$(cat "$SECRET_KEY_FILE")"
+    export SECRET_KEY
+fi
+
 # Check that a .ctfd_secret_key file or SECRET_KEY envvar is set
 if [ ! -f .ctfd_secret_key ] && [ -z "$SECRET_KEY" ]; then
     if [ $WORKERS -gt 1 ]; then
