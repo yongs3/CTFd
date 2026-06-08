@@ -76,7 +76,7 @@ CTFd 설정에서 테마를 `kangwon-cyber`로 선택하면 적용됨.
 
 ### ctfd-whale 플러그인 연동
 
-[ctfd-whale (frankli0324)](https://github.com/frankli0324/ctfd-whale)을 통해 학생별 독립 챌린지 컨테이너를 동적 생성.
+[ctfd-whale fork](https://github.com/yongs3/ctfd-whale)을 통해 학생별 독립 챌린지 컨테이너를 동적 생성.
 
 `docker-compose.yml`에 frpc/frps 서비스, overlay 네트워크, Docker 소켓 마운트가 포함되어 있음.
 
@@ -105,10 +105,7 @@ cd CTFd
 ### 2. whale 플러그인 설치
 
 ```bash
-git clone --depth 1 https://github.com/frankli0324/ctfd-whale.git CTFd/plugins/ctfd-whale
-
-# docker SDK 버전 수정 (upstream이 4.1.0을 핀하고 있어 urllib3 2.x와 호환 안 됨)
-sed -i 's/docker==4.1.0/docker>=7.0.0/' CTFd/plugins/ctfd-whale/requirements.txt
+git clone --depth 1 https://github.com/yongs3/ctfd-whale.git CTFd/plugins/ctfd-whale
 ```
 
 ### 3. 환경 설정
@@ -209,7 +206,7 @@ sudo iptables-save | sudo tee /etc/iptables.rules
 |---|---|---|
 | frps "page not found" | frpc가 챌린지 컨테이너 DNS 해석 못 함 | `whale:docker_auto_connect_containers`에 `ctfd-frpc-1` 확인 |
 | "Unable to access frpc admin api" | frpc admin 포트 불일치 | compose의 `--admin_port`와 `whale:frp_api_url` 포트 일치 확인 |
-| "Unable to connect to Docker API" | docker SDK 버전 문제 | whale의 `requirements.txt`에서 `docker>=7.0.0` 확인 |
+| "Unable to connect to Docker API" | docker SDK 버전 문제 | whale의 `requirements.txt`에서 `docker>=7.0.0,<8` 확인 |
 | 챌린지에서 외부 API 접속 불가 | `containers` 네트워크가 `internal: true` | nginx LLM 프록시 사용, `docker_auto_connect_containers`에 `ctfd-nginx-1` 추가 |
 | 플래그 끝에 `}}` 이중 괄호 | entrypoint에서 `${FLAG:-default{}}` bash 파싱 오류 | `echo "$FLAG" > /flag` 사용 (기본값에 `{}` 포함 금지) |
 | BuildKit에서 pip 설치 실패 | Docker 빌드 DNS 해석 불가 | `build.network: host` 설정 확인 |
@@ -217,5 +214,5 @@ sudo iptables-save | sudo tee /etc/iptables.rules
 ## 참고
 
 - upstream: https://github.com/CTFd/CTFd
-- whale 플러그인: https://github.com/frankli0324/ctfd-whale
-- whale 설치 가이드: https://github.com/frankli0324/ctfd-whale/blob/master/docs/install.md
+- whale 플러그인: https://github.com/yongs3/ctfd-whale
+- whale 설치 가이드: https://github.com/yongs3/ctfd-whale/blob/master/docs/install.md
