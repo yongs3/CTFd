@@ -95,6 +95,18 @@ CTFd 설정에서 테마를 `kangwon-cyber`로 선택하면 적용됨.
 | `WORKERS` | `1` | `4` (gunicorn 멀티워커) |
 | secret 볼륨 | 없음 | `.data/CTFd/secret` 마운트 — 멀티워커용 `SECRET_KEY`를 entrypoint가 자동 생성·영속(무설정) |
 
+## 사전 요구사항
+
+**로컬 서버** (전체 스택 실행):
+- Docker Engine ≥ 24 + Compose v2 플러그인(`docker compose`) + Buildx/BuildKit
+- git
+- root/sudo 사용 가능한 Linux
+
+**클라우드 서버** (리버스 프록시):
+- iptables, root/sudo (6단계에서 사용)
+
+Docker 설치는 [docs.docker.com/engine/install](https://docs.docker.com/engine/install/) 참고.
+
 ## 배포 방법
 
 ### 1. 클론
@@ -114,8 +126,18 @@ git clone --depth 1 https://github.com/yongs3/ctfd-whale.git CTFd/plugins/ctfd-w
 
 ```bash
 cp .env.example .env
-# .env 편집: FRP_TOKEN, FRP_SUBDOMAIN_HOST 설정
 ```
+
+`.env`를 편집해 아래 값을 **실제 값으로** 설정:
+
+```bash
+FRP_TOKEN=...                      # openssl rand -hex 16 로 생성 (frpc↔frps 인증 토큰)
+FRP_SUBDOMAIN_HOST=<공인IP>.nip.io  # HTTP 챌린지 서브도메인 베이스
+```
+
+> **주의**
+> - 값을 비우거나 주석 처리하면 compose가 `changeme` / `127.0.0.1.nip.io` **기본값으로 조용히 폴백**합니다. 후자는 루프백이라 HTTP 챌린지가 깨지면서도 배포는 "성공"한 것처럼 보입니다. `FRP_TOKEN=changeme`는 취약한 공유 기본값이니 반드시 바꾸세요.
+> - `FRP_SUBDOMAIN_HOST`는 5-1단계의 `whale:frp_http_domain_suffix`와 **같은 값**이어야 하고, 거기서 쓰는 `<공인IP>`는 `whale:frp_direct_ip_address`와도 **동일**해야 합니다. 세 값은 독립이 아니라 같은 공인 IP를 공유합니다.
 
 ### 4. Docker Swarm 초기화 (단일 노드)
 
